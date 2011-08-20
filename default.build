@@ -19,7 +19,8 @@
 	
 	<property name="boo.build.dir" value="${boo.dir}/build" />
 	<property name="boo.extensions.build.dir" value="${boo.extensions.dir}/build" />
-	<property name="unityscript.build.dir" value="${unityscript.dir}/bin" />
+	<property name="unityscript.build.dir" value="${unityscript.dir}/bin" />	
+	<property name="keyfile" value="${boo.dir}/src/boo.snk" overwrite="false" />
 	
 	<target name="build" depends="Boo.MonoDevelop, UnityScript.MonoDevelop" />
 	
@@ -71,7 +72,7 @@
 	</target>
 	
 	<target name="Boo.Ide" description="IDE agnostic tools" depends="init">
-		<booc failonerror="true" debug="true" target="library" output="${build.dir}/Boo.Ide.dll">
+		<booc failonerror="true" debug="true" target="library" output="${build.dir}/Boo.Ide.dll" keyfile="${keyfile}">
 			<sources basedir="src/Boo.Ide">
 				<include name="*.boo" />
 			</sources>
@@ -103,7 +104,7 @@
 	</target>
 	
 	<target name="UnityScript.Ide" description="IDE agnostic UnityScript tools" depends="Boo.Ide">
-		<booc failonerror="true" debug="true" target="library" output="${build.dir}/UnityScript.Ide.dll">
+		<booc failonerror="true" debug="true" target="library" output="${build.dir}/UnityScript.Ide.dll" keyfile="${keyfile}">
 			<sources basedir="src/UnityScript.Ide">
 				<include name="*.boo" />
 			</sources>
