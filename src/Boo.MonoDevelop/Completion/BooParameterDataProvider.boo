@@ -17,9 +17,9 @@ class BooParameterDataProvider(IParameterDataProvider):
 	OverloadCount:
 		get: return _methods.Count
 
-	def GetCurrentParameterIndex(context as CodeCompletionContext):
-		line = _document.TextEditor.GetLineText(context.TriggerLine)
-		offset = _document.TextEditor.CursorColumn-2
+	def GetCurrentParameterIndex(widget as ICompletionWidget, context as CodeCompletionContext):
+		line = _document.Editor.GetLineText(context.TriggerLine)
+		offset = _document.Editor.Caret.Column-2
 		if(0 <= offset and offset < line.Length):
 			stack = 0
 			for i in range(offset, -1, -1):

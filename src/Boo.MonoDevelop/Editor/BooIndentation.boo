@@ -32,10 +32,10 @@ class BooEditorIndentation(TextEditorExtension):
 		if key != Gdk.Key.Return:
 			return super(key, keyChar, modifier)
 			
-		lastLine = Editor.GetLineText(Editor.CursorLine)
+		lastLine = Editor.GetLineText(Editor.Caret.Line)
 		if ShouldIndentAfter(lastLine):
 			super(key, keyChar, modifier)
-			Editor.InsertText(Editor.CursorPosition, "\t")
+			Editor.InsertAtCaret ("\t")
 			return false
 		return super(key, keyChar, modifier)
 		

@@ -1,27 +1,35 @@
 namespace Boo.MonoDevelop.Util.Completion
 
 import System
+import System.Linq.Enumerable
 import System.Threading
 import System.Text.RegularExpressions
+import System.Collections.Generic
 
 import Boo.Lang.PatternMatching
 import Boo.Lang.Compiler.TypeSystem
 
 import MonoDevelop.Projects
+import MonoDevelop.Projects.Dom
+import MonoDevelop.Projects.Dom.Output
 import MonoDevelop.Projects.Dom.Parser 
 import MonoDevelop.Ide
 import MonoDevelop.Ide.Gui
 import MonoDevelop.Ide.Gui.Content
 import MonoDevelop.Ide.CodeCompletion
+import MonoDevelop.Core
+import MonoDevelop.Components
 
 import Boo.Ide
 import Boo.MonoDevelop.Util
 
-class BooCompletionTextEditorExtension(CompletionTextEditorExtension):
+class BooCompletionTextEditorExtension(CompletionTextEditorExtension,IPathedDocument):
 	
 	_dom as ProjectDom
 	_project as DotNetProject
 	_index as ProjectIndex
+	
+	public event PathChanged as EventHandler of DocumentPathChangedEventArgs
 	
 	# Match imports statement and capture namespace
 	static IMPORTS_PATTERN = /^\s*import\s+(?<namespace>[\w\d]+(\.[\w\d]+)*)?\.?\s*/
@@ -31,11 +39,15 @@ class BooCompletionTextEditorExtension(CompletionTextEditorExtension):
 		_dom = ProjectDomService.GetProjectDom(Document.Project) or ProjectDomService.GetFileDom(FileName)
 		_project = Document.Project as DotNetProject
 		_index = ProjectIndexFor(_project)
+		textEditorData = Document.Editor
+		UpdatePath(null, null)
+		textEditorData.Caret.PositionChanged += UpdatePath
+		Document.DocumentParsed += { UpdatePath(null, null) }
 		
 	abstract def ShouldEnableCompletionFor(fileName as string) as bool:
 		pass
 		
-	abstract def GetParameterDataProviderFor(methods as List of MethodDescriptor) as IParameterDataProvider:
+	abstract def GetParameterDataProviderFor(methods as Boo.Lang.List of MethodDescriptor) as IParameterDataProvider:
 		pass
 		
 	abstract SelfReference as string:
@@ -49,6 +61,14 @@ class BooCompletionTextEditorExtension(CompletionTextEditorExtension):
 		
 	abstract Primitives as (string):
 		get
+		
+	private _currentPath as (PathEntry)
+		
+	public CurrentPath as (PathEntry):
+		get:
+			return _currentPath
+		private set:
+			_currentPath = value
 		
 	def ProjectIndexFor(project as DotNetProject):
 		return ProjectIndexFactory.ForProject(project)
@@ -69,7 +89,7 @@ class BooCompletionTextEditorExtension(CompletionTextEditorExtension):
 			methods = _index.MethodsFor(filename, code, methodName, line)
 		except e:
 			MonoDevelop.Core.LoggingService.LogError("Error getting methods", e)
-			methods = List of MethodDescriptor()
+			methods = Boo.Lang.List of MethodDescriptor()
 			
 		return GetParameterDataProviderFor(methods)
 		
@@ -107,7 +127,7 @@ class BooCompletionTextEditorExtension(CompletionTextEditorExtension):
 				
 	def AddGloballyVisibleAndImportedSymbolsTo(result as BooCompletionDataList):
 		ThreadPool.QueueUserWorkItem() do:
-			namespaces = List of string() { string.Empty }
+			namespaces = Boo.Lang.List of string() { string.Empty }
 			for ns in _index.ImportsFor(FileName, Text):
 				namespaces.AddUnique(ns)
 			callback = def():
@@ -191,12 +211,13 @@ class BooCompletionTextEditorExtension(CompletionTextEditorExtension):
 		
 	def StartsIdentifier(line as string, offset as int):
 		startsIdentifier = false
+		return false if (0 >= offset or offset >= line.Length)
+		
 		completionChar = line[offset]
 		
 		if(CanStartIdentifier(completionChar)):
-			if(0 < offset and line.Length > offset):
-				prevChar = line[offset-1]
-				startsIdentifier = not (CanStartIdentifier(prevChar) or "."[0] == prevChar) # There's got to be a better way to do this
+			prevChar = line[offset-1]
+			startsIdentifier = not (CanStartIdentifier(prevChar) or "."[0] == prevChar) # There's got to be a better way to do this
 				
 		return startsIdentifier
 		
@@ -209,22 +230,106 @@ class BooCompletionTextEditorExtension(CompletionTextEditorExtension):
 		return 0 <= index and offset >= index
 		
 	protected def GetLineText(line as int):
+		line = Math.Max (0, line)
+		line = Math.Min (TextEditor.LineCount-1, line)
 		return TextEditor.GetLineText(line)
 		
 	protected def GetText(begin as int, end as int):
-		return TextEditor.GetText(begin, end)
+		end = Math.Min (TextLength-1, end)
+		begin = Math.Max (0, begin)
+		
+		if (not end > begin):
+			return string.Empty
+		return TextEditor.GetTextBetween (begin, end)
 		
 	protected TextLength:
-		get: return TextEditor.TextLength
+		get: return TextEditor.Length
 		
 	protected Text:
 		get: return TextEditor.Text
 		
 	protected TextEditor:
-		get: return Document.TextEditor
+		get: return Document.Editor
 		
 	protected FileName:
 		get: return Document.FileName
+		
+	def CreatePathWidget(index as int) as Gtk.Widget:
+		path = CurrentPath
+		if(path == null or index < 0 or index >= path.Length):
+			return null
+		
+		tag = path[index].Tag
+		provider = null
+		if(tag isa ICompilationUnit):
+			provider = CompilationUnitDataProvider(Document)
+		else:
+			provider = DataProvider(Document, tag, GetAmbience())
+			
+		window = DropDownBoxListWindow(provider)
+		window.SelectItem(tag)
+		return window
+		
+	protected virtual def OnPathChanged(args as DocumentPathChangedEventArgs):
+		if(PathChanged != null):
+			PathChanged(self, args)
+			
+	def UpdatePath(sender as object, args as Mono.TextEditor.DocumentLocationEventArgs):
+		unit = Document.CompilationUnit
+		if(unit == null):
+			return
+			
+		location = TextEditor.Caret.Location
+		type = unit.GetTypeAt(location.Line, location.Column)
+		result = System.Collections.Generic.List of PathEntry()
+		ambience = GetAmbience()
+		member = null
+		node = unit as INode
+		
+		if(type != null and type.ClassType != ClassType.Delegate):
+			member = type.GetMemberAt(location.Line, location.Column)
+			
+		if(member != null):
+			node = member
+		elif(type != null):
+			node = type
+			
+		while(node != null):
+			entry as PathEntry
+			if(node isa ICompilationUnit):
+				if(not Document.ParsedDocument.UserRegions.Any()):
+					break
+				region = Document.ParsedDocument.UserRegions.Where({r as FoldingRegion| r.Region.Contains(location.Line, location.Column) }).LastOrDefault()
+				if(region == null):
+					entry = PathEntry(GettextCatalog.GetString("No region"))
+				else:
+					entry = PathEntry(CompilationUnitDataProvider.Pixbuf, region.Name)
+				entry.Position = EntryPosition.Right
+			else:
+				entry = PathEntry(ImageService.GetPixbuf((node as MonoDevelop.Projects.Dom.IMember).StockIcon, Gtk.IconSize.Menu), ambience.GetString((node as MonoDevelop.Projects.Dom.IMember), OutputFlags.IncludeGenerics | OutputFlags.IncludeParameters | OutputFlags.ReformatDelegates))
+			entry.Tag = node
+			result.Insert(0, entry)
+			node = node.Parent
+			
+		noSelection as PathEntry = null
+		if(type == null):
+			noSelection = PathEntry(GettextCatalog.GetString("No selection"))
+			noSelection.Tag = CustomNode(Document.CompilationUnit)
+		elif(member == null and type.ClassType != ClassType.Delegate):
+			noSelection = PathEntry(GettextCatalog.GetString("No selection"))
+			noSelection.Tag = CustomNode(type)
+			
+		if(noSelection != null):
+			result.Add(noSelection)
+			
+		prev = CurrentPath
+		CurrentPath = result.ToArray()
+		OnPathChanged(DocumentPathChangedEventArgs(prev))
+		
+
+class CustomNode(AbstractNode):
+	def constructor(parent as INode):
+		Parent = parent
 
 def IconForEntity(member as IEntity) as MonoDevelop.Core.IconId:
 	match member.EntityType:
@@ -243,7 +348,7 @@ def IconForEntity(member as IEntity) as MonoDevelop.Core.IconId:
 		case EntityType.Event:
 			return Stock.Event
 		case EntityType.Type:
-			type as IType = member
+			type as Boo.Lang.Compiler.TypeSystem.IType = member
 			if type.IsEnum: return Stock.Enum
 			if type.IsInterface: return Stock.Interface
 			if type.IsValueType: return Stock.Struct

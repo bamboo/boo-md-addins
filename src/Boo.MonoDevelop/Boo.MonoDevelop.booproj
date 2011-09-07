@@ -33,19 +33,19 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
-    <Reference Include="MonoDevelop.DesignerSupport, Version=2.4.0.0, Culture=neutral">
+    <Reference Include="MonoDevelop.DesignerSupport, Version=2.6.0.0, Culture=neutral">
       <Package>monodevelop-core-addins</Package>
     </Reference>
-    <Reference Include="MonoDevelop.Ide, Version=2.4.0.0, Culture=neutral">
+    <Reference Include="MonoDevelop.Ide, Version=2.6.0.0, Culture=neutral">
       <Package>monodevelop</Package>
     </Reference>
-    <Reference Include="MonoDevelop.SourceEditor2, Version=2.4.0.0, Culture=neutral">
+    <Reference Include="MonoDevelop.SourceEditor2, Version=2.6.0.0, Culture=neutral">
       <Package>monodevelop-core-addins</Package>
     </Reference>
-    <Reference Include="MonoDevelop.Core, Version=2.4.0.0, Culture=neutral">
+    <Reference Include="MonoDevelop.Core, Version=2.6.0.0, Culture=neutral">
       <Package>monodevelop</Package>
     </Reference>
-    <Reference Include="MonoDevelop.Debugger, Version=2.4.0.0, Culture=neutral">
+    <Reference Include="MonoDevelop.Debugger, Version=2.6.0.0, Culture=neutral">
       <Package>monodevelop-core-addins</Package>
     </Reference>
     <Reference Include="System.Core" />

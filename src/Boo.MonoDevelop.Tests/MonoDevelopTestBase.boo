@@ -3,6 +3,7 @@ namespace Boo.MonoDevelop.Tests
 import System
 import NUnit.Framework
 import MonoDevelop
+import MonoDevelop.Core.Assemblies
 import MonoDevelop.Projects.Dom.Parser
 import MonoDevelop.Ide
 import Gtk from "gtk-sharp" as Gtk
@@ -22,7 +23,7 @@ class MonoDevelopTestBase:
 		Gtk.Application.Init()
 		ProjectDomService.TrackFileChanges = true
 		DesktopService.Initialize()
-		MonoDevelop.Projects.Services.ProjectService.DefaultTargetFramework = Core.Runtime.SystemAssemblyService.GetTargetFramework("2.0")
+		MonoDevelop.Projects.Services.ProjectService.DefaultTargetFramework = Core.Runtime.SystemAssemblyService.GetTargetFramework(TargetFrameworkMoniker("2.0"))
 		
 	[TestFixtureTearDown]
 	virtual def TearDown():

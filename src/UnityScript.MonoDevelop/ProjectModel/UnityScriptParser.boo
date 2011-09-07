@@ -11,7 +11,8 @@ class UnityScriptParser(AbstractParser):
 	public static final MimeType = "text/x-unityscript"
 	
 	def constructor():
-		super("UnityScript", MimeType)
+		# super("UnityScript", MimeType)
+		super()
 		
 	override def CanParse(fileName as string):
 		return IsUnityScriptFile(fileName)

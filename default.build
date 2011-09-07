@@ -13,6 +13,8 @@
 	<property name="md.bin.dir" value="/usr/lib/monodevelop/bin" />
 	<property name="md.addins.dir" value="${environment::get-folder-path('Personal')}/.config/MonoDevelop/addins/Boo"  unless="${property::exists('md.addins.dir')}" />
 	<property name="dir.md.addins" value="${environment::get-folder-path('Personal')}/.config/MonoDevelop/addins/UnityScript" />
+	<property name="dir.gtk" value="${environment::get-folder-path('ProgramFiles')}/GtkSharp/2.12/lib/gtk-sharp-2.0" if="${platform::is-win32()}" />
+	<property name="dir.gtk" value="" unless="${platform::is-win32()}" />
 
 	<include buildfile="nunit.inc" />	
 
@@ -155,7 +157,12 @@
 				<include name="${build.dir}/UnityScript.Ide.dll" />
 				<include name="${md.bin.dir}/MonoDevelop.*.dll" />
 				<include name="${md.bin.dir}/Mono.TextEditor.dll" />
+				<include name="${dir.gtk}/gtk-sharp.dll" if="${platform::is-win32()}" />
+				<include name="${dir.gtk}/gdk-sharp.dll" if="${platform::is-win32()}" />
 			</references>
+			<pkg-references>
+				<package name="gtk-sharp-2.0" unless="${platform::is-win32()}" />
+			</pkg-references> 
 		</booc>
 	</target>
 	
