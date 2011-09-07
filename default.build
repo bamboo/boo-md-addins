@@ -11,8 +11,9 @@
 	<property name="build.dependencies" value="true" />
 	
 	<property name="md.bin.dir" value="/usr/lib/monodevelop/bin" />
-	<property name="md.addins.dir" value="${environment::get-folder-path('Personal')}/.config/MonoDevelop/addins/Boo"  unless="${property::exists('md.addins.dir')}" />
-	<property name="dir.md.addins" value="${environment::get-folder-path('Personal')}/.config/MonoDevelop/addins/UnityScript" />
+	<property name="md.addins.dir" value="${environment::get-folder-path('Personal')}/.config/MonoDevelop-2.6/addins"  unless="${property::exists('md.addins.dir')}" />	
+	<property name="boo.addin.dir" value="${md.addins.dir}/Boo"  unless="${property::exists('boo.addin.dir')}" />
+	<property name="unityscript.addin.dir" value="${md.addins.dir}/UnityScript" />
 	<property name="dir.gtk" value="${environment::get-folder-path('ProgramFiles')}/GtkSharp/2.12/lib/gtk-sharp-2.0" if="${platform::is-win32()}" />
 	<property name="dir.gtk" value="" unless="${platform::is-win32()}" />
 
@@ -241,7 +242,7 @@
 			</fileset>
 		</copy>
 		
-		<copy todir="${md.addins.dir}" overwrite="true">
+		<copy todir="${boo.addin.dir}" overwrite="true">
 			<fileset basedir="${build.dir}">
 			
 				<include name="boo/**/*" />
@@ -296,7 +297,7 @@
 			</embed>
 		</booc>
 		
-		<copy todir="${dir.md.addins}" overwrite="true">
+		<copy todir="${unityscript.addin.dir}" overwrite="true">
 			<fileset basedir="${build.dir}">
 				<include name="UnityScript.MonoDevelop.*" />
 				<include name="Boo.MonoDevelop.Util.dll*" />
@@ -313,7 +314,7 @@
 			</fileset>
 		</copy>
 		
-		<copy todir="${dir.md.addins}">
+		<copy todir="${unityscript.addin.dir}">
 			<fileset basedir="${build.dir}">
 				<include name="Boo.MonoDevelop.Util.dll*" />
 				<include name="Boo.Ide.dll*" />
