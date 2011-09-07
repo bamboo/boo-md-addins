@@ -15,6 +15,6 @@ class BooSyntaxMode(SyntaxMode):
 			self.matches = baseMode.Matches
 			self.prevMarker = baseMode.PrevMarker
 			self.SemanticRules = List[of SemanticRule](baseMode.SemanticRules)
-			self.keywordTable = baseMode.keywordTable
+			#self.keywordTable = baseMode.keywordTable
 			self.properties = baseMode.Properties
 			
