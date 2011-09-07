@@ -15,6 +15,9 @@
 	<property name="dir.md.addins" value="${environment::get-folder-path('Personal')}/.config/MonoDevelop/addins/UnityScript" />
 
 	<include buildfile="nunit.inc" />	
+
+	<property name="boo.build.properties" value="${boo.dir}/build.properties" />
+	<include buildfile="${boo.build.properties}" if="${file::exists(boo.build.properties)}" />
 	<include buildfile="build.properties" if="${file::exists('build.properties')}" />
 	
 	<property name="boo.build.dir" value="${boo.dir}/build" />
